@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script src="~/Scripts/jquery-1.10.2.js"></script>
+    <style>
+        /* Always set the map height explicitly to define the size of the div
+        * element that contains the map. */
+        #map {
+            height: 500px;
+        }
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100px;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <style type="text/css">
+        body {
+            font-family: Arial;
+            font-size: 10pt;
+        }
+
+        table {
+            background-color: #72cbf7;
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+
+            table th {
+                background-color: #72cbf7;
+                color: #000;
+                font-weight: bold;
+            }
+
+            table th, table td {
+                padding: 5px;
+                border: 1px solid #ccc;
+            }
+
+            table, table table td {
+                border: 0px solid #ccc;
+            }
+    </style>
+</head>
+<body>
+    @*<div class="jumbotron">*@
+    <br /><br /><br />
+    <center>
+        <br />
+        <table id="tblWeather" border="1" cellpadding="5" cellspacing="0">
+            <tr>
+                <th colspan="4">
+                    <center>
+                        Current Weather for <label id="name" />
+                    </center>
+                </th>
+            </tr>
+            <tr>
+                <td rowspan="4">
+                    <label id="icon" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label id="temp" />
+                </td>
+                <td>
+                    <label id="humidity" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label id="highTemp" />
+                </td>
+                <td>
+                    <label id="wind" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label id="lowTemp" />
+                </td>
+                <td>
+                    <label id="conditions" />
+                </td>
+            </tr>
+        </table>
+    </center>
+
+    @section scripts{
+        <script type="text/javascript">
+                $(document).ready(function () {
+                    var getIP = 'http://ip-api.com/json/';
+                    $.getJSON(getIP).done(function (location) {
+                        console.log(location)
+
+                        var openWeatherMap = 'http://api.openweathermap.org/data/2.5/weather'
+                        $.getJSON(getIP).done(function (location) {
+                            $.getJSON(openWeatherMap, {
+                                lat: location.lat,
+                                lon: location.lon,
+                                units: 'imperial',
+                                APPID: 'b8da586e118f1587e1c5db570d7316a8'
+                            }).done(function (weather) {
+                                var iconCode = weather.weather[0].icon;
+                                var iconUrl = "http://openweathermap.org/img/w/" + iconCode + ".png";
+                                $("#icon").html("<img src='" + iconUrl + "'>");
+                                $("#name").text(location.city);
+                                $("#temp").text("Current Temperature: " + Math.round(weather.main.temp));
+                                $("#humidity").text("Humidity: " + Math.round(weather.main.humidity) + "%");
+                                $("#conditions").text("Conditions: " + weather.weather[0].main);
+                                $("#wind").text("Wind Speed: " + Math.round(weather.wind.speed) + "mph");
+                                $("#highTemp").text("Today's High: " + Math.round(weather.main.temp_max));
+                                $("#lowTemp").text("Today's Low: " + Math.round(weather.main.temp_min));
+                                console.log(weather)
+                            });
+                        });
+                    });
+                });
+        </script>
+    }
+
+    @*</div>*@
+    <br />
+    <div id="map"></div>
+
+    <script>
+      var map;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 6,
+            center: {lat: 44.7844, lng: -88.7879},
+            mapTypeId: 'terrain'
+        });
+
+        $(document).ready(function () {
+            var parks = $('#parks');
+
+            $('#btn').click(function () {
+                $.ajax({
+                    type: 'GET',
+                    url: 'api/Location',
+                    dataType: 'json',
+                    success: function (data) {
+                        $.each(data, function (index, val) {
+                            var lat = val.lat;
+                            var lng = val.lng;
+                            var latLng = new google.maps.LatLng(lat, lng);
+                            var marker = new google.maps.Marker({
+                                position: latLng,
+                                map: map
+                            });
+                            var infowindow = new google.maps.InfoWindow({
+                                content: val.ParkName + "<br>" + val.StreetAddress + "<br>" + val.City + ", " + val.State + " " + val.Zip + "<br>Park Type: " + val.ParkType
+
+                            });
+                            marker.addListener('click', function () {
+                                infowindow.open(map, marker);
+                            });
+                        });
+                    }
+                });
+            });
+        });
+      }
+
+    </script>
+    <input id="btn" type="button" value="Find Parks" />
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCDwa9g4cQtxNOzJ-fMQHA8yfd-QCDnZSQ&callback=initMap">
+    </script>
+</body>
+</html>
